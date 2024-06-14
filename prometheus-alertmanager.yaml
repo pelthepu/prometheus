@@ -1,0 +1,55 @@
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: v1
+data:
+  alertmanager.yml: |
+    global: {}
+    inhibit_rules:
+      - source_matchers:
+          - alertname="MongoDBInstanceDown"
+        target_matchers:
+          - alertname="InstanceDown"
+        equal:
+          - team
+    receivers:
+    - name: default-receiver
+    - name: 'slack'
+      slack_configs:
+          - channel: '#alerts'  # Specify the Slack channel or user
+            text: |
+              {{ .CommonAnnotations.summary }}
+              {{ .CommonAnnotations.description }}
+            send_resolved: true  # Set to true to send resolved alerts to Slack
+            api_url: 'https://hooks.slack.com/services/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'
+
+    route:
+      group_interval: 5m
+      group_wait: 10s
+      receiver: default-receiver
+      repeat_interval: 3h
+      routes:
+        - matchers:
+            - team=~"devops"
+            - severity="critical"
+          receiver: slack
+          continue: true
+    templates:
+    - /etc/alertmanager/*.tmpl
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: prometheus
+    meta.helm.sh/release-namespace: monitoring
+  creationTimestamp: "2024-06-13T04:45:05Z"
+  labels:
+    app.kubernetes.io/instance: prometheus
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/version: v0.27.0
+    helm.sh/chart: alertmanager-1.11.0
+  name: prometheus-alertmanager
+  namespace: monitoring
+  resourceVersion: "7258"
+  uid: 2001e19f-f156-4b23-9883-06a1b8d0c232
